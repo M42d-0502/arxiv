@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>arxiv</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+</head>
+<div id='root'>
+    <div id='mingdan'>
+        <p class='subtitle'> arxiv名单</p>
+        <div v-for='(item,index) of arxiv' :key='index' class='item-list' :class="item.show?'show':'noshow'">
+            <div class='input'>{{item.name}} </div>
+            <input v-model.number='item.weight' class='input' type="number"> </input>
+            <button @click='changePerson(index)' @click.shift='delPerson(index)' class='bottom-x'>{{item.show?'X':'+'}}</button>
+        </div>
+        <HR>
+        <div class='item-list'>
+            <input v-model='addname.name' class='input'> </input>
+            <input v-model.number='addname.weight' class='input' type="number"> </input>
+            <button @click='addPerson(addname.name,addname.weight)'>添加</button>
+        </div>
+        <div class='item-list'>
+            <button @click='add1'>全体加1</button>
+            <button @click='showALl'>全体显示</button>
+        </div>
+        <div class='item-list'>
+            <input v-model='password' type='password' class='input' placeholder="请输入密码"></input>
+            <button @click='output'>保存</button>
+        </div>
+    </div>
+    <div id='random-area'>
+        <div class='bottom-start-area'>
+            <button @click="start" class='bottom-start'>{{button1}}</button>
+            <button @click="confirm" class='bottom-start'>确认</button>
+        </div>
+        <div class='random'>
+            <div v-if="item.show" v-for='(item,index) of arxiv' :key='index'
+                :class="[whichSelected==item.name?'select':'noselect'] + ' item-sqrure' ">
+                {{item.name}} x {{item.weight}}
+            </div>
+        </div>
+    </div>
+    <div id='jinrimingdan'>
+        <div v-if="selectedList.length > 0 ">
+            <p>今日名单 {{selectedList.length}}</p>
+        </div>
+        <li v-for="item in selectedList">{{item}}</li>
+    </div>
+</div>
+</body>
+
+<script type='text/javascript'>
+    var vm = new Vue({
+        el: '#root',
+        data: {
+            arxiv: [],
+            addname: {
+                name: '某某', weight: '1',
+            },
+            whichSelected: '',
+            button1: '开始',
+            selectedList: [],
+            password: '',
+            loading: true,
+        },
+        created() {
+            // 从 localStorage 中读取数据
+            const savedData = localStorage.getItem('arxivData');
+            if (savedData) {
+                this.arxiv = JSON.parse(savedData);
+            } else {
+                // 如果没有保存的数据，使用默认数据
+                this.arxiv = [
+                    { "name": "李孚嘉", "weight": 9, "show": true },
+                    { "name": "陶柏钧", "weight": 5, "show": true },
+                    { "name": "徐则林", "weight": 10, "show": true },
+                    { "name": "孙卫斌", "weight": 16, "show": true },
+                    { "name": "宋杰", "weight": 7, "show": true },
+                    { "name": "李铁", "weight": 2, "show": true },
+                    { "name": "郑然方", "weight": 12, "show": true },
+                    { "name": "孟德峥", "weight": 1, "show": true },
+		    { "name": "吕温和", "weight": 3, "show": true },
+		    { "name": "傅冰雪", "weight": 4, "show": true },
+		    { "name": "张兰月", "weight": 6, "show": true },
+		    { "name": "丁卫宇", "weight": 13, "show": true },
+		    { "name": "冉松", "weight": 3, "show": true },
+                ];
+            }
+            this.loading = false;
+        },
+        methods: {
+            changePerson(index) {
+                console.log(index);
+                if (this.arxiv[index].show == true) {
+                    this.arxiv[index].show = false
+                }
+                else {
+                    this.arxiv[index].show = true
+                }
+            },
+            delPerson(index) {
+                console.log(index);
+                this.arxiv.splice(index, 1)
+            },
+            addPerson(name, weight) {
+                if (this.arxiv.some(e => e.name == name)) {
+                    console.log('Exists');
+                    return
+                }
+                console.log('addPerson' + name + weight)
+                weight = parseInt(weight)
+                const p = { name: name, weight: weight, show: true }
+                this.arxiv.push(p)
+            },
+            start() {
+                if (this.button1 == '开始') {
+                    console.log('@@@ 开始')
+                    this.button1 = '停止'
+                    var nameList = this.arxiv.filter(item => { return item.show }).map(o => o.name)
+                    var weightList = this.arxiv.filter(item => { return item.show }).map(o => o.weight)
+                    console.log(weightList)
+                    var i
+                    for (i = 0; i < weightList.length; i++)
+                        weightList[i] += weightList[i - 1] || 0;
+                    var that = this
+                    function choujiang() {
+                        var random = Math.random() * weightList[weightList.length - 1];
+                        for (i = 0; i < weightList.length; i++)
+                            if (weightList[i] > random)
+                                break;
+                        that.whichSelected = nameList[i]
+                        console.log(nameList[i])
+                        timeID = setTimeout(choujiang, 50);
+                    }
+                    choujiang()
+                }
+                else {
+                    this.button1 = '开始'
+                    clearInterval(timeID)
+                }
+
+            },
+            confirm() {
+                if (this.button1 == '开始') {
+                    for (let i = 0; i < this.arxiv.length; i++) {
+                        if (this.arxiv[i].name == this.whichSelected)
+                            this.arxiv[i].weight = 1
+                        else this.arxiv[i].weight += 1
+                    }
+                    this.selectedList.push(this.whichSelected)
+                }
+            },
+            add1() {
+                for (let i = 0; i < this.arxiv.length; i++) {
+                    this.arxiv[i].weight += 1
+                }
+
+            },
+            output() {
+                // 验证密码
+                if (this.password === 'ustc') {
+                    // 将数据保存到 localStorage
+                    localStorage.setItem('arxivData', JSON.stringify(this.arxiv));
+                    alert('数据已保存到本地');
+                } else {
+                    alert('密码错误，请输入正确的密码');
+                }
+            },
+            showALl() {
+                for (let i = 0; i < this.arxiv.length; i++) {
+                    this.arxiv[i].show = true
+                }
+            }
+        }
+    })
+</script>
+
+<style type="text/css">
+    * {
+        background-color: #F0F8FF;
+    }
+
+    #root {
+        display: flex;
+        justify-content: space-around;
+        text-align: center;
+    }
+
+    #mingdan {
+        width: 320px;
+        font-size: 30px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #mingdan .item-list {
+        margin-top: 10px;
+
+    }
+
+    .noshow {
+        opacity: 0.2;
+    }
+
+    #mingdan .input {
+        width: 100px;
+        display: inline-block;
+        justify-content: center;
+        text-align: center;
+        font-size: 30px;
+    }
+
+    #mingdan textarea {
+        width: 100%;
+    }
+
+    #random-area {
+        width: 540px;
+        display: flex;
+        flex-direction: column;
+        flex-wrap: wrap;
+
+    }
+
+    #random-area .random {
+
+        width: 540px;
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    #random-area .item-sqrure {
+        margin: 10px;
+        width: 160px;
+        height: 160px;
+        display: flex;
+        background-color: blanchedalmond;
+        text-align: center;
+        justify-content: center;
+        font-size: 25px;
+        vertical-align: middle;
+        line-height: 160px;
+        white-space: nowrap;
+    }
+
+    #random-area .bottom-start-area {
+        width: 540px;
+        justify-content: space-around;
+        display: flex;
+    }
+
+    #random-area .bottom-start {
+        display: flex;
+        font-size: 40px;
+
+    }
+
+    #random-area .select {
+        background-color: yellow;
+    }
+
+    #random-area .noselect {
+        background-color: cyan;
+    }
+
+    #jinrimingdan {
+        width: 250px;
+        font-size: 40px;
+    }
+
+    button {
+        font-size: 30px;
+    }
+
+    .subtitle {
+        font-size: 40px;
+    }
+</style>
